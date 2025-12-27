@@ -1,41 +1,38 @@
 import requests
 
 class OllamaLLM:
-    def __init__(self, model="llama3", temperature=0.7):
+    def __init__(self, model="mistral", temperature=0.7):
         self.model = model
         self.temperature = temperature
         self.base_url = "http://localhost:11434"
 
-    def generate(self, prompt, max_tokens=300):
-        # Try /api/chat first
-        chat_payload = {
+    def generate(self, prompt, max_tokens=350):
+        payload = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
             "stream": False,
             "options": {
                 "temperature": self.temperature,
-                "num_predict": max_tokens
+                "num_predict": max_tokens,
+                "repeat_penalty": 1.2
             }
         }
 
-        try:
-            r = requests.post(f"{self.base_url}/api/chat", json=chat_payload)
-            if r.status_code == 200:
-                return r.json()["message"]["content"].strip()
-        except requests.RequestException:
-            pass  # fall through
+        r = requests.post(f"{self.base_url}/api/chat", json=payload)
+        if r.status_code == 200:
+            return r.json()["message"]["content"].strip()
 
-        # Fallback to /api/generate (older Ollama)
-        generate_payload = {
+        payload = {
             "model": self.model,
             "prompt": prompt,
             "stream": False,
             "options": {
                 "temperature": self.temperature,
-                "num_predict": max_tokens
+                "num_predict": max_tokens,
+                "repeat_penalty": 1.2
             }
         }
 
-        r = requests.post(f"{self.base_url}/api/generate", json=generate_payload)
+        r = requests.post(f"{self.base_url}/api/generate", json=payload)
         r.raise_for_status()
         return r.json()["response"].strip()
